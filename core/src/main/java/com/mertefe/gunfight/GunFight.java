@@ -64,7 +64,7 @@ public class GunFight extends ApplicationAdapter {
             isJumping = false;
         }
 
-        if (playerHitbox.overlaps(platform1)) {
+        if (v_y < 0 && playerHitbox.overlaps(platform1)) {
             playerY = platform1.y + platform1.height;
             v_y = 0;
             isJumping = false;
