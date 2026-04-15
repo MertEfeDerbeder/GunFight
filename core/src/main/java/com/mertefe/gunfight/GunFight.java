@@ -23,12 +23,14 @@ public class GunFight extends ApplicationAdapter {
     private boolean isJumping = false;
     private boolean isJumpCut = false;
     private Rectangle playerHitbox;
+    private Rectangle platform1;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
         player = new Texture("player.png");
         playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
+        platform1 = new Rectangle(200, 250, 300, 20);
         playerX = 140;
         playerY = 140;
     }
@@ -60,6 +62,13 @@ public class GunFight extends ApplicationAdapter {
             playerY = 140;
             v_y = 0;
             isJumping = false;
+        }
+
+        if (playerHitbox.overlaps(platform1)) {
+            playerY = platform1.y + platform1.height;
+            v_y = 0;
+            isJumping = false;
+            playerHitbox.setPosition(playerX, playerY);
         }
 
         playerHitbox.setPosition(playerX, playerY);
