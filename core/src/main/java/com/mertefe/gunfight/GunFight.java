@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
@@ -21,11 +22,13 @@ public class GunFight extends ApplicationAdapter {
     private float jump_force = 600f;
     private boolean isJumping = false;
     private boolean isJumpCut = false;
+    private Rectangle playerHitbox;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
         player = new Texture("player.png");
+        playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
         playerX = 140;
         playerY = 140;
     }
@@ -58,6 +61,8 @@ public class GunFight extends ApplicationAdapter {
             v_y = 0;
             isJumping = false;
         }
+
+        playerHitbox.setPosition(playerX, playerY);
         batch.begin();
         batch.draw(player, playerX, playerY);
         batch.end();
