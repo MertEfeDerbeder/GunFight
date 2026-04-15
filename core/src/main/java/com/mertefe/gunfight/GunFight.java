@@ -18,8 +18,9 @@ public class GunFight extends ApplicationAdapter {
     private float playerY;
     private float v_y = 0;
     private float gravity = 1000f;
-    private float jump_force = 500f;
+    private float jump_force = 600f;
     private boolean isJumping = false;
+    private boolean isJumpCut = false;
 
     @Override
     public void create() {
@@ -41,8 +42,13 @@ public class GunFight extends ApplicationAdapter {
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
             if (isJumping == false) {
                 v_y = jump_force;
+                isJumpCut = false;
                 isJumping = true;
             }
+        }
+        if (!Gdx.input.isKeyPressed(Input.Keys.W) && isJumping == true && v_y > 0 && !isJumpCut) {
+            v_y *= 0.4f;
+            isJumpCut = true;
         }
         v_y -= gravity * Gdx.graphics.getDeltaTime();
         playerY += v_y * Gdx.graphics.getDeltaTime();
