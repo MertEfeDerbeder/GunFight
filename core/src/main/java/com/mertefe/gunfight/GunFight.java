@@ -33,6 +33,10 @@ public class GunFight extends ApplicationAdapter {
     private Rectangle platform1;
     private Rectangle wall1;
 
+    // Camera and viewport
+    private OrthographicCamera camera;
+    private Viewport viewport;
+
     public void create() {
         batch = new SpriteBatch();
 
