@@ -59,8 +59,13 @@ public class GunFight extends ApplicationAdapter {
         playerX += v_x * Gdx.graphics.getDeltaTime();
         
         boolean isTouchingWall = false;
+        int wallSide = 0; // 1 = Sağda duvar var, -1 = Solda duvar var
+        
         playerHitbox.setPosition(playerX, playerY);
         if (playerHitbox.overlaps(platform1) || playerHitbox.overlaps(wall1)) {
+            if (playerX > preX) wallSide = 1;      // Sağa giderken çarptık
+            else if (playerX < preX) wallSide = -1; // Sola giderken çarptık
+            
             playerX = preX; // İleri gidemezsen geri dön (Duvar)
             v_x = 0; // Duvara toslayınca yatay hızı sıfırla
             playerHitbox.setPosition(playerX, playerY);
@@ -76,8 +81,13 @@ public class GunFight extends ApplicationAdapter {
                 isJumpCut = false;
                 isJumping = true;
             } else if (isTouchingWall) {
-                // Duvardan Zıplama (Simple Wall Jump!)
-                v_y = jump_force;
+                // Duvardan Zıplama (Advanced Wall Jump Kick-off!)
+                v_y = jump_force * 0.9f;
+                if (wallSide == 1) {
+                    v_x = -600f; // Duvar sağdaysa sola fırlat
+                } else if (wallSide == -1) {
+                    v_x = 600f;  // Duvar soldaysa sağa fırlat
+                }
                 isJumpCut = false;
             }
         }
@@ -87,6 +97,15 @@ public class GunFight extends ApplicationAdapter {
         }
         
         v_y -= gravity * Gdx.graphics.getDeltaTime();
+        
+        // Wall Slide (Duvara sürtünerek yavaş düşme)
+        if (isTouchingWall && v_y < 0) {
+            float maxSlideSpeed = -150f;
+            if (v_y < maxSlideSpeed) {
+                v_y = maxSlideSpeed;
+            }
+        }
+        
         playerY += v_y * Gdx.graphics.getDeltaTime();
 
         if (playerY < 140) {
