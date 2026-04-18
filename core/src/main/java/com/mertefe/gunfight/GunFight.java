@@ -5,6 +5,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.ScreenUtils;
 
@@ -26,15 +29,31 @@ public class GunFight extends ApplicationAdapter {
     private Rectangle playerHitbox;
     private Rectangle platform1;
     private Rectangle wall1;
+    
+    // Kamera ve Görüntü Alanı
+    private OrthographicCamera camera;
+    private Viewport viewport;
 
     public void create() {
         batch = new SpriteBatch();
+        
+        // 1280x720 sanal dünya yarat. Pencere büyüse de bu oran korunacak (FitViewport)
+        camera = new OrthographicCamera();
+        viewport = new FitViewport(1280, 720, camera);
+        camera.position.set(viewport.getWorldWidth() / 2f, viewport.getWorldHeight() / 2f, 0);
+
         player = new Texture("player.png");
         playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
         platform1 = new Rectangle(200, 250, 300, 20);
         wall1 = new Rectangle(500, 140, 40, 300); // Test için dikey bir duvar
         playerX = 140;
         playerY = 140;
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        // Pencere boyutu değiştiğinde viewport'u güncelle (Aspect ratio bozulmaz)
+        viewport.update(width, height, true);
     }
 
     @Override
@@ -134,6 +153,9 @@ public class GunFight extends ApplicationAdapter {
             playerHitbox.setPosition(playerX, playerY);
         }
 
+        camera.update();
+        batch.setProjectionMatrix(camera.combined); // Batch'in kamerasını güncelle
+        
         batch.begin();
         batch.draw(player, playerX, playerY);
         batch.end();
