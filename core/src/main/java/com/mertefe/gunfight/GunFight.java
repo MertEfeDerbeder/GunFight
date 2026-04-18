@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
@@ -20,6 +21,8 @@ public class GunFight extends ApplicationAdapter {
     private SpriteBatch batch;
     private Texture player;
     private Texture crosshair;
+    private Texture bulletTexture;
+    private Array<Bullet> bullets;
     private float mouseWorldX;
     private float mouseWorldY;
     private float playerX;
@@ -49,6 +52,9 @@ public class GunFight extends ApplicationAdapter {
         player = new Texture("player.png");
         crosshair = new Texture("crosshair.png");
         Gdx.input.setCursorCatched(true);
+
+        bulletTexture = new Texture("bullet.png");
+        bullets = new Array<>();
 
         playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
         platform1 = new Rectangle(200, 250, 300, 20);
@@ -163,8 +169,28 @@ public class GunFight extends ApplicationAdapter {
         mouseWorldX = mousePos.x;
         mouseWorldY = mousePos.y;
 
+        // Shoot a bullet on left click
+        if (Gdx.input.justTouched()) {
+            float startX = playerX + player.getWidth() / 2f;
+            float startY = playerY + player.getHeight() / 2f;
+            bullets.add(new Bullet(startX, startY, mouseWorldX, mouseWorldY));
+        }
+
+        // Update bullets and remove off-screen ones
+        float delta = Gdx.graphics.getDeltaTime();
+        for (int i = bullets.size - 1; i >= 0; i--) {
+            Bullet b = bullets.get(i);
+            b.update(delta);
+            if (b.isOffScreen(1280, 720)) {
+                bullets.removeIndex(i);
+            }
+        }
+
         batch.begin();
         batch.draw(player, playerX, playerY);
+        for (Bullet b : bullets) {
+            batch.draw(bulletTexture, b.x, b.y);
+        }
         batch.draw(crosshair,
                 mouseWorldX - crosshair.getWidth() / 2f,
                 mouseWorldY - crosshair.getHeight() / 2f);
@@ -176,5 +202,6 @@ public class GunFight extends ApplicationAdapter {
         batch.dispose();
         player.dispose();
         crosshair.dispose();
+        bulletTexture.dispose();
     }
 }
