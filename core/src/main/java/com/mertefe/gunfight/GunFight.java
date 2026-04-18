@@ -4,8 +4,12 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
@@ -15,6 +19,9 @@ import com.badlogic.gdx.utils.ScreenUtils;
 public class GunFight extends ApplicationAdapter {
     private SpriteBatch batch;
     private Texture player;
+    private Texture crosshair;
+    private float mouseWorldX;
+    private float mouseWorldY;
     private float playerX;
     private float playerY;
     private float v_y = 0;
@@ -28,7 +35,14 @@ public class GunFight extends ApplicationAdapter {
 
     public void create() {
         batch = new SpriteBatch();
+
+        camera = new OrthographicCamera();
+        viewport = new FitViewport(1280, 720, camera);
+        camera.position.set(viewport.getWorldWidth() / 2f, viewport.getWorldHeight() / 2f, 0);
+
         player = new Texture("player.png");
+        crosshair = new Texture("crosshair.png");
+        Gdx.input.setCursorCatched(true); // Hide the OS cursor
         playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
         platform1 = new Rectangle(200, 250, 300, 20);
         wall1 = new Rectangle(500, 140, 40, 300); // Test için dikey bir duvar
@@ -105,8 +119,21 @@ public class GunFight extends ApplicationAdapter {
             playerHitbox.setPosition(playerX, playerY);
         }
 
+        camera.update();
+        batch.setProjectionMatrix(camera.combined);
+
+        // Convert screen-space mouse coords to world-space
+        Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        viewport.unproject(mousePos);
+        mouseWorldX = mousePos.x;
+        mouseWorldY = mousePos.y;
+
         batch.begin();
         batch.draw(player, playerX, playerY);
+        // Crosshair is drawn centered on the mouse cursor
+        batch.draw(crosshair,
+            mouseWorldX - crosshair.getWidth() / 2f,
+            mouseWorldY - crosshair.getHeight() / 2f);
         batch.end();
     }
 
@@ -114,5 +141,6 @@ public class GunFight extends ApplicationAdapter {
     public void dispose() {
         batch.dispose();
         player.dispose();
+        crosshair.dispose();
     }
 }
