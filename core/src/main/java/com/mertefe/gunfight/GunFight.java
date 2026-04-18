@@ -4,20 +4,23 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
- * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all
- * platforms.
+ * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
  */
 public class GunFight extends ApplicationAdapter {
     private SpriteBatch batch;
     private Texture player;
+    private Texture crosshair;
+    private float mouseWorldX;
+    private float mouseWorldY;
     private float playerX;
     private float playerY;
     private float v_y = 0;
@@ -29,30 +32,32 @@ public class GunFight extends ApplicationAdapter {
     private Rectangle playerHitbox;
     private Rectangle platform1;
     private Rectangle wall1;
-    
-    // Kamera ve Görüntü Alanı
+
+    // Camera and viewport
     private OrthographicCamera camera;
     private Viewport viewport;
 
+    @Override
     public void create() {
         batch = new SpriteBatch();
-        
-        // 1280x720 sanal dünya yarat. Pencere büyüse de bu oran korunacak (FitViewport)
+
         camera = new OrthographicCamera();
         viewport = new FitViewport(1280, 720, camera);
         camera.position.set(viewport.getWorldWidth() / 2f, viewport.getWorldHeight() / 2f, 0);
 
         player = new Texture("player.png");
+        crosshair = new Texture("crosshair.png");
+        Gdx.input.setCursorCatched(true);
+
         playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
         platform1 = new Rectangle(200, 250, 300, 20);
-        wall1 = new Rectangle(500, 140, 40, 300); // Test için dikey bir duvar
+        wall1 = new Rectangle(500, 140, 40, 300);
         playerX = 140;
         playerY = 140;
     }
 
     @Override
     public void resize(int width, int height) {
-        // Pencere boyutu değiştiğinde viewport'u güncelle (Aspect ratio bozulmaz)
         viewport.update(width, height, true);
     }
 
@@ -60,10 +65,9 @@ public class GunFight extends ApplicationAdapter {
     public void render() {
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
 
-        // 1. X Ekseni (Sağ/Sol) Hareketi ve Solid Duvar Kontrolü (Velocity Based)
         float accel = 2500f;
         float walk_speed = 300f;
-        
+
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             v_x += accel * Gdx.graphics.getDeltaTime();
             if (v_x > walk_speed) v_x = walk_speed;
@@ -71,60 +75,53 @@ public class GunFight extends ApplicationAdapter {
             v_x -= accel * Gdx.graphics.getDeltaTime();
             if (v_x < -walk_speed) v_x = -walk_speed;
         } else {
-            v_x *= 0.8f; // Sürtünme (Friction)
+            v_x *= 0.8f;
         }
 
         float preX = playerX;
         playerX += v_x * Gdx.graphics.getDeltaTime();
-        
+
         boolean isTouchingWall = false;
-        int wallSide = 0; // 1 = Sağda duvar var, -1 = Solda duvar var
-        
+        int wallSide = 0;
+
         playerHitbox.setPosition(playerX, playerY);
         if (playerHitbox.overlaps(platform1) || playerHitbox.overlaps(wall1)) {
-            if (playerX > preX) wallSide = 1;      // Sağa giderken çarptık
-            else if (playerX < preX) wallSide = -1; // Sola giderken çarptık
-            
-            playerX = preX; // İleri gidemezsen geri dön (Duvar)
-            v_x = 0; // Duvara toslayınca yatay hızı sıfırla
+            if (playerX > preX) wallSide = 1;
+            else if (playerX < preX) wallSide = -1;
+
+            playerX = preX;
+            v_x = 0;
             playerHitbox.setPosition(playerX, playerY);
-            isTouchingWall = true; // Duvara çarptık!
+            isTouchingWall = true;
         }
 
-        // 2. Y Ekseni (Yukarı/Aşağı) Hareketi ve Solid Zemin/Tavan Kontrolü
-        // Zıplamak için basılı tutmak yerine sadece tuşa basıldığı "o anı" yakalayan JustPressed'i kullandım (Wall Jump bug'ı yaratmaması için)
         if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
-            if (isJumping == false) {
-                // Yerden Zıplama
+            if (!isJumping) {
                 v_y = jump_force;
                 isJumpCut = false;
                 isJumping = true;
             } else if (isTouchingWall) {
-                // Duvardan Zıplama (Advanced Wall Jump Kick-off!)
                 v_y = jump_force * 0.9f;
                 if (wallSide == 1) {
-                    v_x = -600f; // Duvar sağdaysa sola fırlat
+                    v_x = -600f;
                 } else if (wallSide == -1) {
-                    v_x = 600f;  // Duvar soldaysa sağa fırlat
+                    v_x = 600f;
                 }
                 isJumpCut = false;
             }
         }
-        if (!Gdx.input.isKeyPressed(Input.Keys.W) && isJumping == true && v_y > 0 && !isJumpCut) {
+        if (!Gdx.input.isKeyPressed(Input.Keys.W) && isJumping && v_y > 0 && !isJumpCut) {
             v_y *= 0.4f;
             isJumpCut = true;
         }
-        
+
         v_y -= gravity * Gdx.graphics.getDeltaTime();
-        
-        // Wall Slide (Duvara sürtünerek yavaş düşme)
+
         if (isTouchingWall && v_y < 0) {
             float maxSlideSpeed = -150f;
-            if (v_y < maxSlideSpeed) {
-                v_y = maxSlideSpeed;
-            }
+            if (v_y < maxSlideSpeed) v_y = maxSlideSpeed;
         }
-        
+
         playerY += v_y * Gdx.graphics.getDeltaTime();
 
         if (playerY < 140) {
@@ -134,30 +131,35 @@ public class GunFight extends ApplicationAdapter {
         }
 
         playerHitbox.setPosition(playerX, playerY);
-        
-        // Hangi cisme çarptığımızı bulalım ki onun 'y' ve 'height' değerine göre oturtalım
+
         Rectangle hitObj = null;
         if (playerHitbox.overlaps(platform1)) hitObj = platform1;
         else if (playerHitbox.overlaps(wall1)) hitObj = wall1;
 
         if (hitObj != null) {
             if (v_y < 0) {
-                // Aşağı düşerken platforma takıldı (Zemin)
                 playerY = hitObj.y + hitObj.height;
                 isJumping = false;
             } else if (v_y > 0) {
-                // Yukarı zıplarken tuğlaya kafa attı (Tavan)
                 playerY = hitObj.y - player.getHeight();
             }
-            v_y = 0; // İki durumda da hız sıfırlanır
+            v_y = 0;
             playerHitbox.setPosition(playerX, playerY);
         }
 
         camera.update();
-        batch.setProjectionMatrix(camera.combined); // Batch'in kamerasını güncelle
-        
+        batch.setProjectionMatrix(camera.combined);
+
+        Vector3 mousePos = new Vector3(Gdx.input.getX(), Gdx.input.getY(), 0);
+        viewport.unproject(mousePos);
+        mouseWorldX = mousePos.x;
+        mouseWorldY = mousePos.y;
+
         batch.begin();
         batch.draw(player, playerX, playerY);
+        batch.draw(crosshair,
+            mouseWorldX - crosshair.getWidth() / 2f,
+            mouseWorldY - crosshair.getHeight() / 2f);
         batch.end();
     }
 
@@ -165,5 +167,6 @@ public class GunFight extends ApplicationAdapter {
     public void dispose() {
         batch.dispose();
         player.dispose();
+        crosshair.dispose();
     }
 }
