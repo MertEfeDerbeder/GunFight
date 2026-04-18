@@ -13,7 +13,8 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
- * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms.
+ * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all
+ * platforms.
  */
 public class GunFight extends ApplicationAdapter {
     private SpriteBatch batch;
@@ -70,10 +71,12 @@ public class GunFight extends ApplicationAdapter {
 
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             v_x += accel * Gdx.graphics.getDeltaTime();
-            if (v_x > walk_speed) v_x = walk_speed;
+            if (v_x > walk_speed)
+                v_x = walk_speed;
         } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
             v_x -= accel * Gdx.graphics.getDeltaTime();
-            if (v_x < -walk_speed) v_x = -walk_speed;
+            if (v_x < -walk_speed)
+                v_x = -walk_speed;
         } else {
             v_x *= 0.8f;
         }
@@ -86,8 +89,10 @@ public class GunFight extends ApplicationAdapter {
 
         playerHitbox.setPosition(playerX, playerY);
         if (playerHitbox.overlaps(platform1) || playerHitbox.overlaps(wall1)) {
-            if (playerX > preX) wallSide = 1;
-            else if (playerX < preX) wallSide = -1;
+            if (playerX > preX)
+                wallSide = 1;
+            else if (playerX < preX)
+                wallSide = -1;
 
             playerX = preX;
             v_x = 0;
@@ -119,7 +124,8 @@ public class GunFight extends ApplicationAdapter {
 
         if (isTouchingWall && v_y < 0) {
             float maxSlideSpeed = -150f;
-            if (v_y < maxSlideSpeed) v_y = maxSlideSpeed;
+            if (v_y < maxSlideSpeed)
+                v_y = maxSlideSpeed;
         }
 
         playerY += v_y * Gdx.graphics.getDeltaTime();
@@ -133,8 +139,10 @@ public class GunFight extends ApplicationAdapter {
         playerHitbox.setPosition(playerX, playerY);
 
         Rectangle hitObj = null;
-        if (playerHitbox.overlaps(platform1)) hitObj = platform1;
-        else if (playerHitbox.overlaps(wall1)) hitObj = wall1;
+        if (playerHitbox.overlaps(platform1))
+            hitObj = platform1;
+        else if (playerHitbox.overlaps(wall1))
+            hitObj = wall1;
 
         if (hitObj != null) {
             if (v_y < 0) {
@@ -158,8 +166,8 @@ public class GunFight extends ApplicationAdapter {
         batch.begin();
         batch.draw(player, playerX, playerY);
         batch.draw(crosshair,
-            mouseWorldX - crosshair.getWidth() / 2f,
-            mouseWorldY - crosshair.getHeight() / 2f);
+                mouseWorldX - crosshair.getWidth() / 2f,
+                mouseWorldY - crosshair.getHeight() / 2f);
         batch.end();
     }
 
