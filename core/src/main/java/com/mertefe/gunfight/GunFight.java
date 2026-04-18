@@ -24,13 +24,14 @@ public class GunFight extends ApplicationAdapter {
     private boolean isJumpCut = false;
     private Rectangle playerHitbox;
     private Rectangle platform1;
+    private Rectangle wall1;
 
-    @Override
     public void create() {
         batch = new SpriteBatch();
         player = new Texture("player.png");
         playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
         platform1 = new Rectangle(200, 250, 300, 20);
+        wall1 = new Rectangle(500, 140, 40, 300); // Test için dikey bir duvar
         playerX = 140;
         playerY = 140;
     }
@@ -48,18 +49,26 @@ public class GunFight extends ApplicationAdapter {
             playerX -= 5;
         }
         
+        boolean isTouchingWall = false;
         playerHitbox.setPosition(playerX, playerY);
-        if (playerHitbox.overlaps(platform1)) {
+        if (playerHitbox.overlaps(platform1) || playerHitbox.overlaps(wall1)) {
             playerX = preX; // İleri gidemezsen geri dön (Duvar)
             playerHitbox.setPosition(playerX, playerY);
+            isTouchingWall = true; // Duvara çarptık!
         }
 
         // 2. Y Ekseni (Yukarı/Aşağı) Hareketi ve Solid Zemin/Tavan Kontrolü
-        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+        // Zıplamak için basılı tutmak yerine sadece tuşa basıldığı "o anı" yakalayan JustPressed'i kullandım (Wall Jump bug'ı yaratmaması için)
+        if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
             if (isJumping == false) {
+                // Yerden Zıplama
                 v_y = jump_force;
                 isJumpCut = false;
                 isJumping = true;
+            } else if (isTouchingWall) {
+                // Duvardan Zıplama (Simple Wall Jump!)
+                v_y = jump_force;
+                isJumpCut = false;
             }
         }
         if (!Gdx.input.isKeyPressed(Input.Keys.W) && isJumping == true && v_y > 0 && !isJumpCut) {
@@ -77,14 +86,20 @@ public class GunFight extends ApplicationAdapter {
         }
 
         playerHitbox.setPosition(playerX, playerY);
-        if (playerHitbox.overlaps(platform1)) {
+        
+        // Hangi cisme çarptığımızı bulalım ki onun 'y' ve 'height' değerine göre oturtalım
+        Rectangle hitObj = null;
+        if (playerHitbox.overlaps(platform1)) hitObj = platform1;
+        else if (playerHitbox.overlaps(wall1)) hitObj = wall1;
+
+        if (hitObj != null) {
             if (v_y < 0) {
                 // Aşağı düşerken platforma takıldı (Zemin)
-                playerY = platform1.y + platform1.height;
+                playerY = hitObj.y + hitObj.height;
                 isJumping = false;
             } else if (v_y > 0) {
                 // Yukarı zıplarken tuğlaya kafa attı (Tavan)
-                playerY = platform1.y - player.getHeight();
+                playerY = hitObj.y - player.getHeight();
             }
             v_y = 0; // İki durumda da hız sıfırlanır
             playerHitbox.setPosition(playerX, playerY);
