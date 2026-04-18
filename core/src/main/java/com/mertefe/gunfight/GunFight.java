@@ -18,6 +18,7 @@ public class GunFight extends ApplicationAdapter {
     private float playerX;
     private float playerY;
     private float v_y = 0;
+    private float v_x = 0;
     private float gravity = 1000f;
     private float jump_force = 600f;
     private boolean isJumping = false;
@@ -40,19 +41,28 @@ public class GunFight extends ApplicationAdapter {
     public void render() {
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
 
-        // 1. X Ekseni (Sağ/Sol) Hareketi ve Solid Duvar Kontrolü
-        float preX = playerX;
+        // 1. X Ekseni (Sağ/Sol) Hareketi ve Solid Duvar Kontrolü (Velocity Based)
+        float accel = 2500f;
+        float walk_speed = 300f;
+        
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            playerX += 5;
+            v_x += accel * Gdx.graphics.getDeltaTime();
+            if (v_x > walk_speed) v_x = walk_speed;
+        } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            v_x -= accel * Gdx.graphics.getDeltaTime();
+            if (v_x < -walk_speed) v_x = -walk_speed;
+        } else {
+            v_x *= 0.8f; // Sürtünme (Friction)
         }
-        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            playerX -= 5;
-        }
+
+        float preX = playerX;
+        playerX += v_x * Gdx.graphics.getDeltaTime();
         
         boolean isTouchingWall = false;
         playerHitbox.setPosition(playerX, playerY);
         if (playerHitbox.overlaps(platform1) || playerHitbox.overlaps(wall1)) {
             playerX = preX; // İleri gidemezsen geri dön (Duvar)
+            v_x = 0; // Duvara toslayınca yatay hızı sıfırla
             playerHitbox.setPosition(playerX, playerY);
             isTouchingWall = true; // Duvara çarptık!
         }
