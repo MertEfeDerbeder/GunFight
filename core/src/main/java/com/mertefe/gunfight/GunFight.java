@@ -34,8 +34,10 @@ public class GunFight extends ApplicationAdapter {
     private boolean isJumping = false;
     private boolean isJumpCut = false;
     private Rectangle playerHitbox;
-    private Rectangle platform1;
-    private Rectangle wall1;
+    private Array<Rectangle> platforms;
+    private Array<Rectangle> walls;
+    private Texture wallTexture;
+    private Texture platformTexture;
 
     // Camera and viewport
     private OrthographicCamera camera;
@@ -57,10 +59,46 @@ public class GunFight extends ApplicationAdapter {
         bullets = new Array<>();
 
         playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
-        platform1 = new Rectangle(200, 250, 300, 20);
-        wall1 = new Rectangle(500, 140, 40, 300);
-        playerX = 140;
-        playerY = 140;
+
+        // Load map textures
+        wallTexture = new Texture("wall.png");
+        platformTexture = new Texture("platform.png");
+
+        // Build arena map
+        platforms = new Array<>();
+        walls = new Array<>();
+
+        float ph = 20f; // platform height
+        float wt = 30f; // wall thickness
+
+        // Floor (full width)
+        platforms.add(new Rectangle(0, 0, 1280, ph));
+
+        // Level 2 platform (centered)
+        platforms.add(new Rectangle(400, 220, 480, ph));
+
+        // Level 3 platform (centered)
+        platforms.add(new Rectangle(450, 420, 380, ph));
+
+        // Ceiling (full width, closes the top)
+        platforms.add(new Rectangle(0, 700, 1280, ph));
+
+        // Left edge walls (flush to left side of screen)
+        walls.add(new Rectangle(0, 120, wt, 160));     // Left-bottom (gap at bottom to exit map)
+        walls.add(new Rectangle(0, 480, wt, 220));     // Left-top (stops below ceiling)
+
+        // Left middle wall (closer to center platforms, wall-jump distance from edge)
+        walls.add(new Rectangle(200, 280, wt, 160));   // Left-middle
+
+        // Right edge walls (flush to right side of screen)
+        walls.add(new Rectangle(1250, 120, wt, 160));  // Right-bottom (gap at bottom to exit map)
+        walls.add(new Rectangle(1250, 480, wt, 220));  // Right-top (stops below ceiling)
+
+        // Right middle wall (closer to center platforms, wall-jump distance from edge)
+        walls.add(new Rectangle(1050, 280, wt, 160));  // Right-middle
+
+        playerX = 640;
+        playerY = 30;
     }
 
     @Override
@@ -94,12 +132,13 @@ public class GunFight extends ApplicationAdapter {
         int wallSide = 0;
 
         playerHitbox.setPosition(playerX, playerY);
-        if (playerHitbox.overlaps(platform1) || playerHitbox.overlaps(wall1)) {
-            if (playerX > preX)
-                wallSide = 1;
-            else if (playerX < preX)
-                wallSide = -1;
+        boolean xCollision = false;
+        for (Rectangle r : platforms) { if (playerHitbox.overlaps(r)) { xCollision = true; break; } }
+        if (!xCollision) { for (Rectangle r : walls) { if (playerHitbox.overlaps(r)) { xCollision = true; break; } } }
 
+        if (xCollision) {
+            if (playerX > preX) wallSide = 1;
+            else if (playerX < preX) wallSide = -1;
             playerX = preX;
             v_x = 0;
             playerHitbox.setPosition(playerX, playerY);
@@ -136,19 +175,11 @@ public class GunFight extends ApplicationAdapter {
 
         playerY += v_y * Gdx.graphics.getDeltaTime();
 
-        if (playerY < 140) {
-            playerY = 140;
-            v_y = 0;
-            isJumping = false;
-        }
-
         playerHitbox.setPosition(playerX, playerY);
 
         Rectangle hitObj = null;
-        if (playerHitbox.overlaps(platform1))
-            hitObj = platform1;
-        else if (playerHitbox.overlaps(wall1))
-            hitObj = wall1;
+        for (Rectangle r : platforms) { if (playerHitbox.overlaps(r)) { hitObj = r; break; } }
+        if (hitObj == null) { for (Rectangle r : walls) { if (playerHitbox.overlaps(r)) { hitObj = r; break; } } }
 
         if (hitObj != null) {
             if (v_y < 0) {
@@ -187,6 +218,14 @@ public class GunFight extends ApplicationAdapter {
         }
 
         batch.begin();
+        // Draw platforms
+        for (Rectangle p : platforms) {
+            batch.draw(platformTexture, p.x, p.y, p.width, p.height);
+        }
+        // Draw walls
+        for (Rectangle w : walls) {
+            batch.draw(wallTexture, w.x, w.y, w.width, w.height);
+        }
         batch.draw(player, playerX, playerY);
         for (Bullet b : bullets) {
             batch.draw(bulletTexture, b.x, b.y);
@@ -203,5 +242,7 @@ public class GunFight extends ApplicationAdapter {
         player.dispose();
         crosshair.dispose();
         bulletTexture.dispose();
+        wallTexture.dispose();
+        platformTexture.dispose();
     }
 }
