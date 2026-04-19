@@ -107,6 +107,9 @@ public class GunFight extends ApplicationAdapter {
     }
 
     @Override
+    public void render() {
+        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
+
         // Handle player input
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
             player1.moveRight(Gdx.graphics.getDeltaTime());
