@@ -143,12 +143,22 @@ public class GunFight extends ApplicationAdapter {
             bullets.add(new Bullet(startX, startY, mouseWorldX, mouseWorldY));
         }
 
-        // Update bullets and remove off-screen ones
+        // Update bullets and remove off-screen ones or those hitting players
         float delta = Gdx.graphics.getDeltaTime();
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
-            if (b.isOffScreen(1280, 720)) {
+            
+            boolean hit = false;
+            for (Player p : players) {
+                if (b.hitbox.overlaps(p.hitbox)) {
+                    p.takeDamage(10); // Each hit adds 10%
+                    hit = true;
+                    break;
+                }
+            }
+            
+            if (hit || b.isOffScreen(1280, 720)) {
                 bullets.removeIndex(i);
             }
         }
