@@ -25,6 +25,7 @@ public class GunFight extends ApplicationAdapter {
     private Texture bulletTexture;
     private Array<Bullet> bullets;
     private Player player1;
+    private Player player2;
     private Array<Player> players;
     private BitmapFont font;
     private float mouseWorldX;
@@ -58,7 +59,9 @@ public class GunFight extends ApplicationAdapter {
 
         players = new Array<>();
         player1 = new Player(playerTexture, 640, 30);
+        player2 = new Player(playerTexture, 640, 240); // On the middle platform
         players.add(player1);
+        players.add(player2);
 
         // Load map textures
         wallTexture = new Texture("wall.png");
