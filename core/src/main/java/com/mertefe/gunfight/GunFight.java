@@ -11,6 +11,7 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.utils.ScreenUtils;
 
 /**
@@ -19,21 +20,16 @@ import com.badlogic.gdx.utils.ScreenUtils;
  */
 public class GunFight extends ApplicationAdapter {
     private SpriteBatch batch;
-    private Texture player;
+    private Texture playerTexture;
     private Texture crosshair;
     private Texture bulletTexture;
     private Array<Bullet> bullets;
+    private Player player1;
+    private Player player2;
+    private Array<Player> players;
+    private BitmapFont font;
     private float mouseWorldX;
     private float mouseWorldY;
-    private float playerX;
-    private float playerY;
-    private float v_y = 0;
-    private float v_x = 0;
-    private float gravity = 1000f;
-    private float jump_force = 600f;
-    private boolean isJumping = false;
-    private boolean isJumpCut = false;
-    private Rectangle playerHitbox;
     private Array<Rectangle> platforms;
     private Array<Rectangle> walls;
     private Texture wallTexture;
@@ -51,14 +47,21 @@ public class GunFight extends ApplicationAdapter {
         viewport = new FitViewport(1280, 720, camera);
         camera.position.set(viewport.getWorldWidth() / 2f, viewport.getWorldHeight() / 2f, 0);
 
-        player = new Texture("player.png");
+        playerTexture = new Texture("player.png");
         crosshair = new Texture("crosshair.png");
         Gdx.input.setCursorCatched(true);
 
         bulletTexture = new Texture("bullet.png");
         bullets = new Array<>();
 
-        playerHitbox = new Rectangle(playerX, playerY, player.getWidth(), player.getHeight());
+        font = new BitmapFont(); // Default font for damage %
+        font.getData().setScale(1.5f);
+
+        players = new Array<>();
+        player1 = new Player(playerTexture, 640, 30);
+        player2 = new Player(playerTexture, 640, 240); // On the middle platform
+        players.add(player1);
+        players.add(player2);
 
         // Load map textures
         wallTexture = new Texture("wall.png");
@@ -84,21 +87,21 @@ public class GunFight extends ApplicationAdapter {
         platforms.add(new Rectangle(0, 700, 1280, ph));
 
         // Left edge walls (flush to left side of screen)
-        walls.add(new Rectangle(0, 120, wt, 160));     // Left-bottom (gap at bottom to exit map)
-        walls.add(new Rectangle(0, 480, wt, 220));     // Left-top (stops below ceiling)
+        walls.add(new Rectangle(0, 120, wt, 160)); // Left-bottom (gap at bottom to exit map)
+        walls.add(new Rectangle(0, 480, wt, 220)); // Left-top (stops below ceiling)
 
         // Left middle wall (closer to center platforms, wall-jump distance from edge)
-        walls.add(new Rectangle(200, 280, wt, 160));   // Left-middle
+        walls.add(new Rectangle(200, 280, wt, 160)); // Left-middle
 
         // Right edge walls (flush to right side of screen)
-        walls.add(new Rectangle(1250, 120, wt, 160));  // Right-bottom (gap at bottom to exit map)
-        walls.add(new Rectangle(1250, 480, wt, 220));  // Right-top (stops below ceiling)
+        walls.add(new Rectangle(1250, 120, wt, 160)); // Right-bottom (gap at bottom to exit map)
+        walls.add(new Rectangle(1250, 480, wt, 220)); // Right-top (stops below ceiling)
 
         // Right middle wall (closer to center platforms, wall-jump distance from edge)
-        walls.add(new Rectangle(1050, 280, wt, 160));  // Right-middle
+        walls.add(new Rectangle(1050, 280, wt, 160)); // Right-middle
 
-        playerX = 640;
-        playerY = 30;
+        player1.x = 640;
+        player1.y = 30;
     }
 
     @Override
@@ -110,86 +113,25 @@ public class GunFight extends ApplicationAdapter {
     public void render() {
         ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
 
-        float accel = 2500f;
-        float walk_speed = 300f;
-
+        // Handle player input
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            v_x += accel * Gdx.graphics.getDeltaTime();
-            if (v_x > walk_speed)
-                v_x = walk_speed;
+            player1.moveRight(Gdx.graphics.getDeltaTime());
         } else if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            v_x -= accel * Gdx.graphics.getDeltaTime();
-            if (v_x < -walk_speed)
-                v_x = -walk_speed;
+            player1.moveLeft(Gdx.graphics.getDeltaTime());
         } else {
-            v_x *= 0.8f;
-        }
-
-        float preX = playerX;
-        playerX += v_x * Gdx.graphics.getDeltaTime();
-
-        boolean isTouchingWall = false;
-        int wallSide = 0;
-
-        playerHitbox.setPosition(playerX, playerY);
-        boolean xCollision = false;
-        for (Rectangle r : platforms) { if (playerHitbox.overlaps(r)) { xCollision = true; break; } }
-        if (!xCollision) { for (Rectangle r : walls) { if (playerHitbox.overlaps(r)) { xCollision = true; break; } } }
-
-        if (xCollision) {
-            if (playerX > preX) wallSide = 1;
-            else if (playerX < preX) wallSide = -1;
-            playerX = preX;
-            v_x = 0;
-            playerHitbox.setPosition(playerX, playerY);
-            isTouchingWall = true;
+            player1.applyFriction();
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.W)) {
-            if (!isJumping) {
-                v_y = jump_force;
-                isJumpCut = false;
-                isJumping = true;
-            } else if (isTouchingWall) {
-                v_y = jump_force * 0.9f;
-                if (wallSide == 1) {
-                    v_x = -600f;
-                } else if (wallSide == -1) {
-                    v_x = 600f;
-                }
-                isJumpCut = false;
-            }
+            player1.jump();
         }
-        if (!Gdx.input.isKeyPressed(Input.Keys.W) && isJumping && v_y > 0 && !isJumpCut) {
-            v_y *= 0.4f;
-            isJumpCut = true;
+        if (!Gdx.input.isKeyPressed(Input.Keys.W)) {
+            player1.cutJump();
         }
 
-        v_y -= gravity * Gdx.graphics.getDeltaTime();
-
-        if (isTouchingWall && v_y < 0) {
-            float maxSlideSpeed = -150f;
-            if (v_y < maxSlideSpeed)
-                v_y = maxSlideSpeed;
-        }
-
-        playerY += v_y * Gdx.graphics.getDeltaTime();
-
-        playerHitbox.setPosition(playerX, playerY);
-
-        Rectangle hitObj = null;
-        for (Rectangle r : platforms) { if (playerHitbox.overlaps(r)) { hitObj = r; break; } }
-        if (hitObj == null) { for (Rectangle r : walls) { if (playerHitbox.overlaps(r)) { hitObj = r; break; } } }
-
-        if (hitObj != null) {
-            if (v_y < 0) {
-                playerY = hitObj.y + hitObj.height;
-                isJumping = false;
-            } else if (v_y > 0) {
-                playerY = hitObj.y - player.getHeight();
-            }
-            v_y = 0;
-            playerHitbox.setPosition(playerX, playerY);
+        // Update all players
+        for (Player p : players) {
+            p.update(Gdx.graphics.getDeltaTime(), platforms, walls);
         }
 
         camera.update();
@@ -202,17 +144,33 @@ public class GunFight extends ApplicationAdapter {
 
         // Shoot a bullet on left click
         if (Gdx.input.justTouched()) {
-            float startX = playerX + player.getWidth() / 2f;
-            float startY = playerY + player.getHeight() / 2f;
-            bullets.add(new Bullet(startX, startY, mouseWorldX, mouseWorldY));
+            float startX = player1.x + player1.getWidth() / 2f;
+            float startY = player1.y + player1.getHeight() / 2f;
+            bullets.add(new Bullet(player1, startX, startY, mouseWorldX, mouseWorldY));
         }
 
-        // Update bullets and remove off-screen ones
+        // Update bullets and remove off-screen ones or those hitting players
         float delta = Gdx.graphics.getDeltaTime();
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
-            if (b.isOffScreen(1280, 720)) {
+
+            if (!b.hasLeftOwner) {
+                if (!b.hitbox.overlaps(b.owner.hitbox)) {
+                    b.hasLeftOwner = true;
+                }
+            }
+
+            boolean hit = false;
+            for (Player p : players) {
+                if ((p != b.owner || b.hasLeftOwner) && b.hitbox.overlaps(p.hitbox)) {
+                    p.takeDamage(10); // Each hit adds 10%
+                    hit = true;
+                    break;
+                }
+            }
+
+            if (hit || b.isOffScreen(1280, 720)) {
                 bullets.removeIndex(i);
             }
         }
@@ -226,7 +184,10 @@ public class GunFight extends ApplicationAdapter {
         for (Rectangle w : walls) {
             batch.draw(wallTexture, w.x, w.y, w.width, w.height);
         }
-        batch.draw(player, playerX, playerY);
+        for (Player p : players) {
+            p.draw(batch);
+            font.draw(batch, p.damage + "%", p.x, p.y + p.getHeight() + 20);
+        }
         for (Bullet b : bullets) {
             batch.draw(bulletTexture, b.x, b.y);
         }
@@ -239,10 +200,11 @@ public class GunFight extends ApplicationAdapter {
     @Override
     public void dispose() {
         batch.dispose();
-        player.dispose();
+        playerTexture.dispose();
         crosshair.dispose();
         bulletTexture.dispose();
         wallTexture.dispose();
         platformTexture.dispose();
+        font.dispose();
     }
 }
