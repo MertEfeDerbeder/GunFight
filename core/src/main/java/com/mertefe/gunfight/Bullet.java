@@ -9,11 +9,15 @@ public class Bullet {
     public float velocityX;
     public float velocityY;
     public Rectangle hitbox;
+    public Player owner;
+    public boolean hasLeftOwner = false;
 
     private static final float SPEED = 800f;
     private static final float SIZE = 8f;
 
-    public Bullet(float startX, float startY, float targetX, float targetY) {
+    public Bullet(Player owner, float startX, float startY, float targetX, float targetY) {
+        this.owner = owner;
+        this.hasLeftOwner = false;
         this.x = startX;
         this.y = startY;
 

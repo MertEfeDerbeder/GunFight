@@ -35,12 +35,14 @@ public class Player {
 
     public void moveLeft(float delta) {
         v_x -= ACCEL * delta;
-        if (v_x < -WALK_SPEED) v_x = -WALK_SPEED;
+        if (v_x < -WALK_SPEED)
+            v_x = -WALK_SPEED;
     }
 
     public void moveRight(float delta) {
         v_x += ACCEL * delta;
-        if (v_x > WALK_SPEED) v_x = WALK_SPEED;
+        if (v_x > WALK_SPEED)
+            v_x = WALK_SPEED;
     }
 
     public void applyFriction() {
@@ -72,7 +74,8 @@ public class Player {
 
     public void takeDamage(int amount) {
         damage += amount;
-        if (damage > 999) damage = 999;
+        if (damage > 100)
+            damage = 100;
     }
 
     public void update(float delta, Array<Rectangle> platforms, Array<Rectangle> walls) {
@@ -101,8 +104,10 @@ public class Player {
         }
 
         if (xCollision) {
-            if (x > preX) wallSide = 1;
-            else if (x < preX) wallSide = -1;
+            if (x > preX)
+                wallSide = 1;
+            else if (x < preX)
+                wallSide = -1;
             x = preX;
             v_x = 0;
             hitbox.setPosition(x, y);
@@ -114,7 +119,8 @@ public class Player {
 
         if (isTouchingWall && v_y < 0) {
             float maxSlideSpeed = -150f;
-            if (v_y < maxSlideSpeed) v_y = maxSlideSpeed;
+            if (v_y < maxSlideSpeed)
+                v_y = maxSlideSpeed;
         }
 
         // Vertical Movement
@@ -153,11 +159,11 @@ public class Player {
     public void draw(SpriteBatch batch) {
         batch.draw(texture, x, y);
     }
-    
+
     public float getWidth() {
         return texture.getWidth();
     }
-    
+
     public float getHeight() {
         return texture.getHeight();
     }

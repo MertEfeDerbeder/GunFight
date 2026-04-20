@@ -53,7 +53,7 @@ public class GunFight extends ApplicationAdapter {
 
         bulletTexture = new Texture("bullet.png");
         bullets = new Array<>();
-        
+
         font = new BitmapFont(); // Default font for damage %
         font.getData().setScale(1.5f);
 
@@ -87,18 +87,18 @@ public class GunFight extends ApplicationAdapter {
         platforms.add(new Rectangle(0, 700, 1280, ph));
 
         // Left edge walls (flush to left side of screen)
-        walls.add(new Rectangle(0, 120, wt, 160));     // Left-bottom (gap at bottom to exit map)
-        walls.add(new Rectangle(0, 480, wt, 220));     // Left-top (stops below ceiling)
+        walls.add(new Rectangle(0, 120, wt, 160)); // Left-bottom (gap at bottom to exit map)
+        walls.add(new Rectangle(0, 480, wt, 220)); // Left-top (stops below ceiling)
 
         // Left middle wall (closer to center platforms, wall-jump distance from edge)
-        walls.add(new Rectangle(200, 280, wt, 160));   // Left-middle
+        walls.add(new Rectangle(200, 280, wt, 160)); // Left-middle
 
         // Right edge walls (flush to right side of screen)
-        walls.add(new Rectangle(1250, 120, wt, 160));  // Right-bottom (gap at bottom to exit map)
-        walls.add(new Rectangle(1250, 480, wt, 220));  // Right-top (stops below ceiling)
+        walls.add(new Rectangle(1250, 120, wt, 160)); // Right-bottom (gap at bottom to exit map)
+        walls.add(new Rectangle(1250, 480, wt, 220)); // Right-top (stops below ceiling)
 
         // Right middle wall (closer to center platforms, wall-jump distance from edge)
-        walls.add(new Rectangle(1050, 280, wt, 160));  // Right-middle
+        walls.add(new Rectangle(1050, 280, wt, 160)); // Right-middle
 
         player1.x = 640;
         player1.y = 30;
@@ -146,7 +146,7 @@ public class GunFight extends ApplicationAdapter {
         if (Gdx.input.justTouched()) {
             float startX = player1.x + player1.getWidth() / 2f;
             float startY = player1.y + player1.getHeight() / 2f;
-            bullets.add(new Bullet(startX, startY, mouseWorldX, mouseWorldY));
+            bullets.add(new Bullet(player1, startX, startY, mouseWorldX, mouseWorldY));
         }
 
         // Update bullets and remove off-screen ones or those hitting players
@@ -154,16 +154,22 @@ public class GunFight extends ApplicationAdapter {
         for (int i = bullets.size - 1; i >= 0; i--) {
             Bullet b = bullets.get(i);
             b.update(delta);
-            
+
+            if (!b.hasLeftOwner) {
+                if (!b.hitbox.overlaps(b.owner.hitbox)) {
+                    b.hasLeftOwner = true;
+                }
+            }
+
             boolean hit = false;
             for (Player p : players) {
-                if (b.hitbox.overlaps(p.hitbox)) {
+                if ((p != b.owner || b.hasLeftOwner) && b.hitbox.overlaps(p.hitbox)) {
                     p.takeDamage(10); // Each hit adds 10%
                     hit = true;
                     break;
                 }
             }
-            
+
             if (hit || b.isOffScreen(1280, 720)) {
                 bullets.removeIndex(i);
             }
